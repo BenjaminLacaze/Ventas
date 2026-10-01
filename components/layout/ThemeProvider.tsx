@@ -26,7 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
     document.documentElement.classList.add(sizeMap[configuracion.fontSize]);
 
-  }, [configuracion.tema, configuracion.fontSize, mounted]);
+  }, [configuracion.fontSize, mounted]);
 
   // Si no ha montado, mostramos children tal cual pero sin clases dinámicas
   // para evitar mismatch SSR vs CSR
