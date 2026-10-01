@@ -146,7 +146,14 @@ export default function VentasPage() {
                 >
                   <div className="aspect-square bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden">
                     {p.fotoUrl ? (
-                      <img src={p.fotoUrl} alt={p.nombre} className="w-full h-full object-cover" />
+                      <img 
+                        src={p.fotoUrl} 
+                        alt={p.nombre} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 100 100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext fill='%23999' x='50' y='50' font-family='sans-serif' font-size='10' text-anchor='middle' alignment-baseline='middle'%3EError%3C/text%3E%3C/svg%3E";
+                        }}
+                      />
                     ) : (
                       <span className="text-xs text-muted-foreground">Sin img</span>
                     )}

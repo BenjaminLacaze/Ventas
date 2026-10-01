@@ -79,7 +79,14 @@ export default function ProductosPage() {
             <div key={producto.id} className="bg-card border border-border rounded-lg overflow-hidden flex flex-col shadow-sm hover:shadow-md transition-shadow">
               <div className="h-48 bg-muted flex items-center justify-center">
                 {producto.fotoUrl ? (
-                  <img src={producto.fotoUrl} alt={producto.nombre} className="w-full h-full object-cover" />
+                  <img 
+                    src={producto.fotoUrl} 
+                    alt={producto.nombre} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 100 100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext fill='%23999' x='50' y='50' font-family='sans-serif' font-size='12' text-anchor='middle' alignment-baseline='middle'%3EError de enlace%3C/text%3E%3C/svg%3E";
+                    }}
+                  />
                 ) : (
                   <span className="text-muted-foreground text-sm">Sin imagen</span>
                 )}

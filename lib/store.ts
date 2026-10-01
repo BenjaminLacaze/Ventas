@@ -133,6 +133,14 @@ export const useStore = create<StoreState>()(
       deleteEtiqueta: (id) =>
         set((state) => ({
           etiquetas: state.etiquetas.filter((e) => e.id !== id),
+          productos: state.productos.map(p => ({
+            ...p,
+            etiquetas: p.etiquetas.filter(eId => eId !== id)
+          })),
+          servicios: state.servicios.map(s => ({
+            ...s,
+            etiquetas: s.etiquetas.filter(eId => eId !== id)
+          })),
         })),
 
       addVenta: (venta) =>

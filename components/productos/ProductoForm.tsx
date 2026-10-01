@@ -9,17 +9,17 @@ interface ProductoFormProps {
 
 export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
   const [nuevaEtiqueta, setNuevaEtiqueta] = useState('');
-  const { addProducto, updateProducto, etiquetas, addEtiqueta } = useStore();
+  const { addProducto, updateProducto, etiquetas, addEtiqueta, deleteEtiqueta, ventas, productos, servicios } = useStore();
 
   const [nombre, setNombre] = useState(productoInicial?.nombre || '');
-  const [cantidad, setCantidad] = useState(productoInicial?.cantidad || 0);
-  const [precioCompra, setPrecioCompra] = useState(productoInicial?.precioCompra || 0);
-  const [precioVenta, setPrecioVenta] = useState(productoInicial?.precioVenta || 0);
+  const [cantidad, setCantidad] = useState<number | ''>(productoInicial !== undefined ? productoInicial.cantidad : '');
+  const [precioCompra, setPrecioCompra] = useState<number | ''>(productoInicial !== undefined ? productoInicial.precioCompra : '');
+  const [precioVenta, setPrecioVenta] = useState<number | ''>(productoInicial !== undefined ? productoInicial.precioVenta : '');
   const [fotoUrl, setFotoUrl] = useState(productoInicial?.fotoUrl || '');
   const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState<string[]>(productoInicial?.etiquetas || []);
 
-  const ganancia = precioVenta - precioCompra;
-  const porcentajeGanancia = precioCompra > 0 ? (ganancia / precioCompra) * 100 : 0;
+  const ganancia = (Number(precioVenta) || 0) - (Number(precioCompra) || 0);
+  const porcentajeGanancia = (Number(precioCompra) || 0) > 0 ? (ganancia / (Number(precioCompra) || 1)) * 100 : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +29,18 @@ export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
       return;
     }
 
+    let finalFotoUrl = fotoUrl.trim();
+    if (finalFotoUrl && !finalFotoUrl.startsWith('http://') && !finalFotoUrl.startsWith('https://')) {
+      finalFotoUrl = 'https://' + finalFotoUrl;
+    }
+
     const nuevoProducto: Producto = {
       id: productoInicial?.id || Date.now().toString(),
       nombre,
-      cantidad,
-      precioCompra,
-      precioVenta,
-      fotoUrl,
+      cantidad: Number(cantidad) || 0,
+      precioCompra: Number(precioCompra) || 0,
+      precioVenta: Number(precioVenta) || 0,
+      fotoUrl: finalFotoUrl,
       etiquetas: etiquetasSeleccionadas,
     };
 
@@ -45,6 +50,24 @@ export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
       addProducto(nuevoProducto);
     }
     onClose();
+  };
+
+  const handleDeleteEtiquetaSegura = (id: string, nombreEtiqueta: string) => {
+    const tieneHistorial = ventas.some(v => v.detalles.some(d => {
+      const etiqIds = d.tipoItem === 'producto'
+        ? productos.find(p => p.id === d.itemId)?.etiquetas
+        : servicios.find(s => s.id === d.itemId)?.etiquetas;
+      return etiqIds?.includes(id);
+    }));
+
+    if (tieneHistorial) {
+      alert(`La etiqueta "${nombreEtiqueta}" tiene historial de ventas en la pestaña Resumen. Por favor, elimínala desde allí.`);
+      return;
+    }
+
+    if (window.confirm(`¿Seguro que deseas eliminar la etiqueta "${nombreEtiqueta}" por completo del sistema?`)) {
+      deleteEtiqueta(id);
+    }
   };
 
   const toggleEtiqueta = (id: string) => {
@@ -71,7 +94,7 @@ export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Cantidad</label>
-          <input required type="number" min="0" value={cantidad} onChange={e => setCantidad(Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
+          <input required type="number" min="0" value={cantidad} onChange={e => setCantidad(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Foto URL (Opcional)</label>
@@ -81,11 +104,11 @@ export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Precio Compra ($)</label>
-          <input required type="number" min="0" value={precioCompra} onChange={e => setPrecioCompra(Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
+          <input required type="number" min="0" value={precioCompra} onChange={e => setPrecioCompra(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Precio Venta ($)</label>
-          <input required type="number" min="0" value={precioVenta} onChange={e => setPrecioVenta(Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
+          <input required type="number" min="0" value={precioVenta} onChange={e => setPrecioVenta(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
         </div>
       </div>
 
@@ -104,18 +127,31 @@ export function ProductoForm({ productoInicial, onClose }: ProductoFormProps) {
         <label className="block text-sm font-medium mb-2">Etiquetas</label>
         <div className="flex flex-wrap gap-2 mb-3">
           {etiquetas.map(etiq => (
-            <button
-              key={etiq.id}
-              type="button"
-              onClick={() => toggleEtiqueta(etiq.id)}
-              className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                etiquetasSeleccionadas.includes(etiq.id)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-transparent border-border text-foreground hover:border-primary'
-              }`}
-            >
-              {etiq.nombre}
-            </button>
+            <div key={etiq.id} className="flex items-center">
+              <button
+                type="button"
+                onClick={() => toggleEtiqueta(etiq.id)}
+                className={`px-3 py-1 text-sm rounded-l-full border border-r-0 transition-colors ${
+                  etiquetasSeleccionadas.includes(etiq.id)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent border-border text-foreground hover:border-primary'
+                }`}
+              >
+                {etiq.nombre}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteEtiquetaSegura(etiq.id, etiq.nombre)}
+                className={`px-2 py-1 text-sm rounded-r-full border transition-colors hover:bg-red-500 hover:text-white hover:border-red-500 ${
+                  etiquetasSeleccionadas.includes(etiq.id)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent border-border text-foreground'
+                }`}
+                title="Eliminar etiqueta"
+              >
+                ×
+              </button>
+            </div>
           ))}
         </div>
         <div className="flex space-x-2">

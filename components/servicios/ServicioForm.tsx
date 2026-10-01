@@ -9,10 +9,10 @@ interface ServicioFormProps {
 
 export function ServicioForm({ servicioInicial, onClose }: ServicioFormProps) {
   const [nuevaEtiqueta, setNuevaEtiqueta] = useState('');
-  const { addServicio, updateServicio, etiquetas, addEtiqueta } = useStore();
+  const { addServicio, updateServicio, etiquetas, addEtiqueta, deleteEtiqueta, ventas, productos, servicios } = useStore();
   
   const [nombre, setNombre] = useState(servicioInicial?.nombre || '');
-  const [precio, setPrecio] = useState(servicioInicial?.precio || 0);
+  const [precio, setPrecio] = useState<number | ''>(servicioInicial !== undefined ? servicioInicial.precio : '');
   const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState<string[]>(servicioInicial?.etiquetas || []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -26,7 +26,7 @@ export function ServicioForm({ servicioInicial, onClose }: ServicioFormProps) {
     const nuevoServicio: Servicio = {
       id: servicioInicial?.id || Date.now().toString(),
       nombre,
-      precio,
+      precio: Number(precio) || 0,
       etiquetas: etiquetasSeleccionadas,
     };
 
@@ -36,6 +36,24 @@ export function ServicioForm({ servicioInicial, onClose }: ServicioFormProps) {
       addServicio(nuevoServicio);
     }
     onClose();
+  };
+
+  const handleDeleteEtiquetaSegura = (id: string, nombreEtiqueta: string) => {
+    const tieneHistorial = ventas.some(v => v.detalles.some(d => {
+      const etiqIds = d.tipoItem === 'producto'
+        ? productos.find(p => p.id === d.itemId)?.etiquetas
+        : servicios.find(s => s.id === d.itemId)?.etiquetas;
+      return etiqIds?.includes(id);
+    }));
+
+    if (tieneHistorial) {
+      alert(`La etiqueta "${nombreEtiqueta}" tiene historial de ventas en la pestaña Resumen. Por favor, elimínala desde allí.`);
+      return;
+    }
+
+    if (window.confirm(`¿Seguro que deseas eliminar la etiqueta "${nombreEtiqueta}" por completo del sistema?`)) {
+      deleteEtiqueta(id);
+    }
   };
 
   const toggleEtiqueta = (id: string) => {
@@ -61,25 +79,38 @@ export function ServicioForm({ servicioInicial, onClose }: ServicioFormProps) {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Precio ($)</label>
-        <input required type="number" min="0" value={precio} onChange={e => setPrecio(Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
+        <input required type="number" min="0" value={precio} onChange={e => setPrecio(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-border rounded-md px-3 py-2 bg-background" />
       </div>
 
       <div>
         <label className="block text-sm font-medium mb-2">Etiquetas</label>
         <div className="flex flex-wrap gap-2 mb-3">
           {etiquetas.map(etiq => (
-            <button
-              key={etiq.id}
-              type="button"
-              onClick={() => toggleEtiqueta(etiq.id)}
-              className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                etiquetasSeleccionadas.includes(etiq.id)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-transparent border-border text-foreground hover:border-primary'
-              }`}
-            >
-              {etiq.nombre}
-            </button>
+            <div key={etiq.id} className="flex items-center">
+              <button
+                type="button"
+                onClick={() => toggleEtiqueta(etiq.id)}
+                className={`px-3 py-1 text-sm rounded-l-full border border-r-0 transition-colors ${
+                  etiquetasSeleccionadas.includes(etiq.id)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent border-border text-foreground hover:border-primary'
+                }`}
+              >
+                {etiq.nombre}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteEtiquetaSegura(etiq.id, etiq.nombre)}
+                className={`px-2 py-1 text-sm rounded-r-full border transition-colors hover:bg-red-500 hover:text-white hover:border-red-500 ${
+                  etiquetasSeleccionadas.includes(etiq.id)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent border-border text-foreground'
+                }`}
+                title="Eliminar etiqueta"
+              >
+                ×
+              </button>
+            </div>
           ))}
         </div>
         <div className="flex space-x-2">

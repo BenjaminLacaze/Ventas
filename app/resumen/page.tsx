@@ -2,12 +2,14 @@
 
 import { useStore } from "@/lib/store";
 import { useMemo, useState } from "react";
+import { ReembolsoModal } from "@/components/resumen/ReembolsoModal";
 
 type FiltroTiempo = 'diario' | 'mensual' | 'anual' | 'todo';
 
 export default function ResumenPage() {
-  const { ventas, etiquetas } = useStore();
+  const { ventas, etiquetas, deleteEtiqueta } = useStore();
   const [filtro, setFiltro] = useState<FiltroTiempo>('todo');
+  const [reembolsoEtiqueta, setReembolsoEtiqueta] = useState<{id: string, nombre: string} | null>(null);
 
   const ventasFiltradas = useMemo(() => {
     const ahora = new Date();
@@ -24,51 +26,58 @@ export default function ResumenPage() {
     });
   }, [ventas, filtro]);
 
-  const totalVentas = ventasFiltradas.reduce((sum, v) => sum + v.total, 0);
-  const totalGanancias = ventasFiltradas.reduce((sum, v) => sum + v.gananciaTotal, 0);
-
-  // Agrupar por etiquetas
-  const resumenPorEtiqueta = useMemo(() => {
-    // mapa: idEtiqueta -> { unidades, total, ganancia }
+  // Agrupar por etiquetas y calcular totales reales
+  const { resumenPorEtiqueta, totalVentas, totalGanancias } = useMemo(() => {
     const mapa = new Map<string, { unidades: number; total: number; ganancia: number }>();
     
-    // Inicializar mapa con todas las etiquetas
     etiquetas.forEach(e => {
       mapa.set(e.id, { unidades: 0, total: 0, ganancia: 0 });
     });
 
-    // Como los detalles no tienen las etiquetas guardadas en la venta, necesitamos buscarlas
-    // Sin embargo, para hacerlo perfectamente independiente en el tiempo, 
-    // idealmente la venta guardaría la etiqueta al momento de vender.
-    // Como no es así (solo guarda itemId), buscaremos en productos/servicios actuales.
-    // Importamos el store dentro del useMemo (o usamos las referencias)
     const storeState = useStore.getState();
-    const mapItems = new Map<string, string[]>(); // itemId -> array de etiqueta ids
+    const mapItems = new Map<string, string[]>(); 
     storeState.productos.forEach(p => mapItems.set(p.id, p.etiquetas));
     storeState.servicios.forEach(s => mapItems.set(s.id, s.etiquetas));
 
+    let sumaTotal = 0;
+    let sumaGanancia = 0;
+
     ventasFiltradas.forEach(v => {
+      let ventaContabilizada = false;
       v.detalles.forEach(d => {
         const etiqIds = mapItems.get(d.itemId) || [];
-        etiqIds.forEach(idEtiqueta => {
-          const stats = mapa.get(idEtiqueta);
-          if (stats) {
+        // Filtramos para ver si alguna etiqueta existe actualmente en el mapa
+        const etiquetasValidas = etiqIds.filter(id => mapa.has(id));
+        
+        if (etiquetasValidas.length > 0) {
+          // Si el item tiene etiquetas válidas, suma a los totales globales (evita contar ítems sin etiqueta o con etiqueta borrada)
+          sumaTotal += d.subtotal;
+          sumaGanancia += d.ganancia;
+
+          // Y lo suma a cada tarjeta de etiqueta individual
+          etiquetasValidas.forEach(idEtiqueta => {
+            const stats = mapa.get(idEtiqueta)!;
             stats.unidades += d.cantidad;
             stats.total += d.subtotal;
             stats.ganancia += d.ganancia;
-          }
-        });
+          });
+        }
       });
     });
 
-    // Formatear para renderizar, omitiendo las que tienen 0 ventas
     const resultado = etiquetas.map(e => ({
       ...e,
       stats: mapa.get(e.id)!,
     })).filter(e => e.stats.unidades > 0);
 
-    return resultado;
+    return { 
+      resumenPorEtiqueta: resultado,
+      totalVentas: sumaTotal,
+      totalGanancias: sumaGanancia
+    };
   }, [ventasFiltradas, etiquetas]);
+
+
 
 
   return (
@@ -110,10 +119,28 @@ export default function ResumenPage() {
           <div className="grid grid-cols-1 gap-6">
             {resumenPorEtiqueta.map(etiqueta => (
               <div key={etiqueta.id} className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-border bg-muted/30">
+                <div className="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
                   <h3 className="font-bold text-lg uppercase tracking-wider flex items-center">
                     🏷️ {etiqueta.nombre}
                   </h3>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setReembolsoEtiqueta({ id: etiqueta.id, nombre: etiqueta.nombre })}
+                      className="text-amber-600 hover:text-amber-800 text-sm font-medium px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 rounded-md transition-colors"
+                    >
+                      Reembolso
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`¿Seguro que deseas eliminar la etiqueta "${etiqueta.nombre}" y todo su historial de resumen?`)) {
+                          deleteEtiqueta(etiqueta.id);
+                        }
+                      }}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium px-3 py-1 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
                 <div className="p-0">
                   <table className="w-full text-left">
@@ -144,6 +171,16 @@ export default function ResumenPage() {
           </div>
         )}
       </div>
+
+      {reembolsoEtiqueta && (
+        <ReembolsoModal
+          isOpen={!!reembolsoEtiqueta}
+          onClose={() => setReembolsoEtiqueta(null)}
+          etiquetaId={reembolsoEtiqueta.id}
+          etiquetaNombre={reembolsoEtiqueta.nombre}
+          ventasFiltradas={ventasFiltradas}
+        />
+      )}
     </div>
   );
 }
