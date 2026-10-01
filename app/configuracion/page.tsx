@@ -1,14 +1,9 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { Tema } from "@/types";
 
 export default function ConfiguracionPage() {
   const { configuracion, setConfiguracion } = useStore();
-
-  const handleTemaChange = (tema: Tema) => {
-    setConfiguracion({ tema });
-  };
 
   const handleFontSizeChange = (fontSize: "small" | "medium" | "large") => {
     setConfiguracion({ fontSize });
@@ -27,46 +22,6 @@ export default function ConfiguracionPage() {
         </div>
         
         <div className="p-6 space-y-8">
-          {/* Tema Visual */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">Tema Visual</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button 
-                onClick={() => handleTemaChange('light')}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${configuracion.tema === 'light' ? 'border-zinc-900 ring-2 ring-zinc-900/50' : 'border-border hover:border-zinc-400'}`}
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-white border border-zinc-300"></div>
-                  <span className="font-medium text-zinc-900">Modo Claro</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Estética blanca clásica, minimalista con botones en tono oscuro.</p>
-              </button>
-
-              <button 
-                onClick={() => handleTemaChange('celeste')}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${configuracion.tema === 'celeste' ? 'border-sky-500 ring-2 ring-sky-500/50' : 'border-border hover:border-sky-300'}`}
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-white border-2 border-sky-500"></div>
-                  <span className="font-medium text-sky-700">Celeste</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Fondo blanco puro, pero menús, textos y botones en tonos celestes.</p>
-              </button>
-
-              <button 
-                onClick={() => handleTemaChange('dark')}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${configuracion.tema === 'dark' ? 'border-zinc-300 ring-2 ring-zinc-300/50' : 'border-border hover:border-zinc-500'}`}
-              >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-zinc-950 border border-zinc-500"></div>
-                  <span className="font-medium">Oscuro Profundo</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Tonos grises oscuros para máximo descanso visual.</p>
-              </button>
-            </div>
-          </div>
-
-          <div className="h-px bg-border w-full"></div>
 
           {/* Tamaño de Fuente */}
           <div>

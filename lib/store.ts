@@ -9,9 +9,11 @@ interface StoreState {
   etiquetas: Etiqueta[];
   ventas: Venta[];
   configuracion: Configuracion;
+  isMobileMenuOpen: boolean;
 
   // Acciones (a implementar luego en sus respectivos módulos)
   setConfiguracion: (config: Partial<Configuracion>) => void;
+  setMobileMenuOpen: (isOpen: boolean) => void;
   
   // Acciones de Productos
   addProducto: (producto: Producto) => void;
@@ -82,12 +84,16 @@ export const useStore = create<StoreState>()(
       etiquetas: mockEtiquetas,
       ventas: [],
       configuracion: {
-        tema: 'light',
         fontSize: 'medium',
       },
+      isMobileMenuOpen: false,
       setConfiguracion: (config) =>
         set((state) => ({
           configuracion: { ...state.configuracion, ...config },
+        })),
+      setMobileMenuOpen: (isOpen) =>
+        set(() => ({
+          isMobileMenuOpen: isOpen,
         })),
 
       addProducto: (producto) =>

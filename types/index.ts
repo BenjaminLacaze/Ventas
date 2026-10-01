@@ -42,9 +42,6 @@ export interface Venta {
   gananciaTotal: number;
 }
 
-export type Tema = 'light' | 'celeste' | 'dark';
-
 export interface Configuracion {
-  tema: Tema;
   fontSize: 'small' | 'medium' | 'large';
 }

@@ -15,11 +15,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
     
-    // Limpiar clases previas
-    document.documentElement.classList.remove('theme-light', 'theme-celeste', 'theme-dark', 'text-sm', 'text-base', 'text-lg');
-    
-    // Aplicar tema
-    document.documentElement.classList.add(`theme-${configuracion.tema}`);
+    // Limpiar clases previas de fuente
+    document.documentElement.classList.remove('text-sm', 'text-base', 'text-lg');
 
     // Aplicar tamaño de fuente
     const sizeMap = {

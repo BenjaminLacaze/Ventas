@@ -113,9 +113,9 @@ export default function VentasPage() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-full gap-6">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-8rem)] min-h-[600px] gap-6">
       {/* Catálogo */}
-      <div className="flex-1 flex flex-col min-h-0 bg-card border border-border rounded-lg shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-[400px] bg-card border border-border rounded-lg shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/30 flex space-x-2">
           <button
             onClick={() => setTab("productos")}
