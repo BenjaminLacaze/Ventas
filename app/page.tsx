@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { useMemo } from "react";
 
 export default function Home() {
-  const { ventas, productos } = useStore();
+  const { ventas, productos, servicios, etiquetas } = useStore();
 
   const {
     ventasHoy,
@@ -23,23 +23,46 @@ export default function Home() {
     let vMes = 0, gMes = 0;
     let vAno = 0, gAno = 0;
 
+    const mapaEtiquetasActivas = new Set(etiquetas.map(e => e.id));
+    const mapItems = new Map<string, string[]>();
+    productos.forEach(p => mapItems.set(p.id, p.etiquetas));
+    servicios.forEach(s => mapItems.set(s.id, s.etiquetas));
+
     ventas.forEach(v => {
       const fechaVenta = v.fecha.split('T')[0];
       const mesVenta = fechaVenta.substring(0, 7);
       const anoVenta = fechaVenta.substring(0, 4);
 
-      if (fechaVenta === hoyStr) {
-        vHoy += v.total;
-        gHoy += v.gananciaTotal;
-      }
-      if (mesVenta === mesStr) {
-        vMes += v.total;
-        gMes += v.gananciaTotal;
-      }
-      if (anoVenta === anoStr) {
-        vAno += v.total;
-        gAno += v.gananciaTotal;
-      }
+      let ventaValidaHoy = 0, gananciaValidaHoy = 0;
+      let ventaValidaMes = 0, gananciaValidaMes = 0;
+      let ventaValidaAno = 0, gananciaValidaAno = 0;
+
+      v.detalles.forEach(d => {
+        const etiqIds = mapItems.get(d.itemId) || [];
+        const tieneEtiquetaActiva = etiqIds.some(id => mapaEtiquetasActivas.has(id));
+
+        if (tieneEtiquetaActiva) {
+          if (fechaVenta === hoyStr) {
+            ventaValidaHoy += d.subtotal;
+            gananciaValidaHoy += d.ganancia;
+          }
+          if (mesVenta === mesStr) {
+            ventaValidaMes += d.subtotal;
+            gananciaValidaMes += d.ganancia;
+          }
+          if (anoVenta === anoStr) {
+            ventaValidaAno += d.subtotal;
+            gananciaValidaAno += d.ganancia;
+          }
+        }
+      });
+
+      vHoy += ventaValidaHoy;
+      gHoy += gananciaValidaHoy;
+      vMes += ventaValidaMes;
+      gMes += gananciaValidaMes;
+      vAno += ventaValidaAno;
+      gAno += gananciaValidaAno;
     });
 
     return {
@@ -50,7 +73,7 @@ export default function Home() {
       ventasAno: vAno,
       gananciasAno: gAno,
     };
-  }, [ventas]);
+  }, [ventas, productos, servicios, etiquetas]);
 
   const totalProductosDisponibles = productos.reduce((sum, p) => sum + p.cantidad, 0);
 
