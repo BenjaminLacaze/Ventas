@@ -4,6 +4,7 @@ import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
+import { DataInitializer } from '@/components/layout/DataInitializer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className}`}>
+        <DataInitializer />
         <ThemeProvider>
           <div className="flex h-screen overflow-hidden bg-background">
           <Sidebar />
